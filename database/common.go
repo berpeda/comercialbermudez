@@ -44,3 +44,31 @@ func ConnectionString(keys models.SecretRDSJson) string {
 	return fmt.Sprintf("%s:%s@tcp(%s)/%s?allowCleartextPasswords=true", dbUser, authToken, dbEndpoint, dbName)
 
 }
+
+func IsAdmin(userUUID string) (bool, string) {
+	fmt.Println("Checking IsAdmin...")
+
+	err := DatabaseConnect()
+	if err != nil {
+		return false, err.Error()
+	}
+	defer Database.Close()
+
+	query := "SELECT 1 FROM Usuarios WHERE UUID_usuario = ? AND Rol = 0"
+	fmt.Println(query)
+
+	res, err := Database.Query(query, userUUID)
+	if err != nil {
+		return false, err.Error()
+	}
+
+	var value string
+	res.Next()
+	res.Scan(&value)
+
+	if value == "1" {
+		return true, "The user is an admin!"
+	}
+
+	return false, "The user is not an admin!"
+}
