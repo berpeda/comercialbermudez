@@ -67,8 +67,10 @@ func IsAdmin(userUUID string) (bool, string) {
 	res.Scan(&value)
 
 	if value == "1" {
+		fmt.Println("The user is an admin!")
 		return true, "The user is an admin!"
 	}
 
+	fmt.Println("The user is not an admin!")
 	return false, "The user is not an admin!"
 }

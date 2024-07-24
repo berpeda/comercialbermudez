@@ -101,9 +101,9 @@ func DeleteCategory(user string, IdCategory int) (int, string) {
 		return 400, issue
 	}
 
-	result, err := database.DeleteCategory(user, IdCategory)
+	result, err := database.DeleteCategory(IdCategory)
 	if err != nil {
-		return 400, "Error trying to DELETE a Category with Id > " + strconv.Itoa(int(result)) + " . \nError > " + err.Error()
+		return 400, "Error trying to DELETE a Category with ID > " + strconv.Itoa(int(result)) + " . \nError > " + err.Error()
 	}
 
 	return 200, "{ IdCategory: " + strconv.Itoa(int(result)) + " }"

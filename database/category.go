@@ -118,7 +118,7 @@ func SelectAllCategories() ([]models.Category, error) {
 	return categories, nil
 }
 
-func DeleteCategory(user string, idCategory int) (int64, error) {
+func DeleteCategory(idCategory int) (int64, error) {
 	fmt.Println("Delete a category and its products starting...")
 
 	err := DatabaseConnect()
@@ -146,7 +146,7 @@ func DeleteCategory(user string, idCategory int) (int64, error) {
 		fmt.Println("Error retrieving the number of rows affected > ", err.Error())
 	}
 
-	fmt.Printf("Category deleted successfully.\nIndex inserted > %d\n The row(s) affected > %d", lastInsertId, rowsAffected)
+	fmt.Printf("Category deleted successfully.\nIndex deleted > %d\n The row(s) affected > %d", lastInsertId, rowsAffected)
 
 	return int64(idCategory), nil
 

@@ -71,14 +71,51 @@ func GetAllProducts() (int, string) {
 	return 200, string(jsonData)
 }
 
-// func UpdateProduct(user, body string, idProduct int) (int, string) {
-// 	var updateProduct models.Product
-// 	r, productToUpdate := GetProduct(idProduct)
+func PutProduct(user, body string, idProduct int) (int, string) {
 
-// 	if r == 400 {
-// 		return 400, "No products found with id > " + strconv.Itoa(idProduct)
-// 	}
+	isAdmin, issue := database.IsAdmin(user)
+	if !isAdmin {
+		return 400, issue
+	}
 
-// 	err := json.Marshal(productToUpdate)
-// 	// CONTINUAR AQUI
-// }
+	var updateProduct models.Product
+	err := json.Unmarshal([]byte(body), &updateProduct)
+	if err != nil {
+		return 400, "There is an issue with received data " + err.Error()
+	}
+
+	if updateProduct.IdCategory == 0 || updateProduct.IdProvider == 0 ||
+		len(updateProduct.NameProduct) == 0 || len(updateProduct.DescriptionProduct) == 0 ||
+		len(updateProduct.CodeProduct) == 0 || updateProduct.PriceProduct == 0 ||
+		updateProduct.Stock < 0 {
+
+		return 400, "Any of the product's attributes needs to be filled (The creation and the update isn't necessary to be filled)"
+	}
+
+	result, err := database.UpdateProduct(updateProduct, idProduct)
+	if err != nil {
+		return 400, "Error trying to UPDATE the product > " + strconv.Itoa(idProduct)
+	}
+
+	jsonData, err := json.Marshal(result)
+	if err != nil {
+		return 400, "Error trying to serialize result to JSON format."
+	}
+
+	return 200, string(jsonData)
+}
+
+func DeleteProduct(user string, idProduct int) (int, string) {
+
+	isAdmin, issue := database.IsAdmin(user)
+	if !isAdmin {
+		return 400, issue
+	}
+
+	result, err := database.DeleteProduct(idProduct)
+	if err != nil {
+		return 400, "Error trying to DELETE the product with ID > " + strconv.Itoa(int(result))
+	}
+
+	return 200, "{ IdProduct: " + strconv.Itoa(int(result)) + "}"
+}
