@@ -29,11 +29,11 @@ func Handlers(path, method, body string, header map[string]string, request event
 	case "/prod":
 		return ProductsActions(body, path, method, user, idn, request)
 	case "/odet":
-		// return OrderDetailsActions(body, path, method, user, idn, request)
+		return OrderDetailsActions(body, path, method, user, idn, request)
 	case "/addr":
-		// return AddressActions(body, path, method, user, idn, request)
+		return AddressActions(body, path, method, user, idn, request)
 	case "/prov":
-		// return ProviderActions(body, path, method, user, idn, request)
+		return ProviderActions(body, path, method, user, idn, request)
 	case "/cate":
 		return CategoryActions(body, path, method, user, idn, request)
 	case "/orde":
@@ -123,22 +123,22 @@ func CategoryActions(body, path, method, user string, id int, request events.API
 	return 400, "Method Invalid"
 }
 
-// func OrderDetailsActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
-// 	switch method {
-// 	case "GET":
-// 		if id != 0 {
-// 			return routers.GetOrderDetail(id)
-// 		}
-// 		return routers.GetAllOrderDetails()
-// 	case "POST":
-// 		return routers.PostOrderDetail(user, body)
-// 	case "PUT":
-// 		return routers.PutOrderDetail(user, body, id)
-// 	case "DELETE":
-// 		return routers.DeleteOrderDetail(user, id)
-// 	}
-// 	return 400, "Method Invalid"
-// }
+func OrderDetailsActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
+	switch method {
+	case "GET":
+		if id != 0 {
+			return routers.GetOrderDetail(id)
+		}
+		return routers.GetAllOrderDetails()
+	case "POST":
+		return routers.PostOrderDetail(user, body)
+	case "PUT":
+		return routers.PutOrderDetail(user, body, id)
+	case "DELETE":
+		return routers.DeleteOrderDetail(user, id)
+	}
+	return 400, "Method Invalid"
+}
 
 func OrderActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
 	switch method {
@@ -157,36 +157,36 @@ func OrderActions(body, path, method, user string, id int, request events.APIGat
 	return 400, "Method Invalid"
 }
 
-// func AddressActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
-// 	switch method {
-// 	case "GET":
-// 		if id != 0 {
-// 			return routers.GetAddress(id)
-// 		}
-// 		return routers.GetAllAddress()
-// 	case "POST":
-// 		return routers.PostAddress(user, body)
-// 	case "PUT":
-// 		return routers.PutAddress(user, body, id)
-// 	case "DELETE":
-// 		return routers.DeleteAddress(user, id)
-// 	}
-// 	return 400, "Method Invalid"
-// }
+func AddressActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
+	switch method {
+	case "GET":
+		if id != 0 {
+			return routers.GetAddress(id)
+		}
+		return routers.GetAllAddress()
+	case "POST":
+		return routers.PostAddress(user, body)
+	case "PUT":
+		return routers.PutAddress(user, body, id)
+	case "DELETE":
+		return routers.DeleteAddress(user, id)
+	}
+	return 400, "Method Invalid"
+}
 
-// func ProviderActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
-// 	switch method {
-// 	case "GET":
-// 		if id != 0 {
-// 			return routers.GetProvider(id)
-// 		}
-// 		return routers.GetAllProviders()
-// 	case "POST":
-// 		return routers.PostProvider(user, body)
-// 	case "PUT":
-// 		return routers.PutProvider(user, body, id)
-// 	case "DELETE":
-// 		return routers.DeleteProvider(user, id)
-// 	}
-// 	return 400, "Method Invalid"
-// }
+func ProviderActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
+	switch method {
+	case "GET":
+		if id != 0 {
+			return routers.GetProvider(id)
+		}
+		return routers.GetAllProviders()
+	case "POST":
+		return routers.PostProvider(user, body)
+	case "PUT":
+		return routers.PutProvider(user, body, id)
+	case "DELETE":
+		return routers.DeleteProvider(user, id)
+	}
+	return 400, "Method Invalid"
+}

@@ -37,7 +37,7 @@ func PostProduct(user, body string) (int, string) {
 		return 400, "Error trying to INSERT the Product > " + product.NameProduct + "\nError > " + err.Error()
 	}
 
-	return 200, "{IdProduct: " + strconv.Itoa(int(result)) + "}"
+	return 200, "{ IdProduct: " + strconv.Itoa(int(result)) + "}"
 }
 
 func GetProduct(idProduct int) (int, string) {

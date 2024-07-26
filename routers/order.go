@@ -62,7 +62,7 @@ func PostOrder(user, body string) (int, string) {
 		return 400, "Error trying to INSERT the order ID > " + strconv.Itoa(order.IdOrder) + "\nError > " + err.Error()
 	}
 
-	return 200, "{ Idorder: " + strconv.Itoa(int(result)) + "}"
+	return 200, "{ IdOrder: " + strconv.Itoa(int(result)) + "}"
 }
 
 func PutOrder(user, body string, idOrder int) (int, string) {
