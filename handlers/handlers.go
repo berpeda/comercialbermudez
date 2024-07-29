@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"fmt"
+	"net/http"
 	"strconv"
 
 	"github.com/aws/aws-lambda-go/events"
@@ -40,53 +41,54 @@ func Handlers(path, method, body string, header map[string]string, request event
 		return OrderActions(body, path, method, user, idn, request)
 	}
 
-	return 400, "Invalid Method"
+	return http.StatusBadRequest, "Invalid Method"
 }
 
 func ValidAuthorization(path, method string, headers map[string]string) (bool, int, string) {
 
-	if (path[0:5] == "/prod" && method == "GET") || (path[0:5] == "/cate" && method == "GET") {
-		return true, 200, ""
+	if (path[:5] == "/prod" && method == "GET") || (path[:5] == "/cate" && method == "GET") {
+		return true, http.StatusOK, ""
 	}
 
 	token := headers["authorization"]
-
 	if len(token) == 0 {
-		return false, 401, "Token is required"
+		return false, http.StatusUnauthorized, "Token is required"
 	}
 
 	isOK, err, msg := auth.TokenValidation(token)
 	if !isOK {
 		if err != nil {
-			fmt.Println("Error in the token" + err.Error())
-			return false, 401, err.Error()
-		} else {
-			fmt.Println("Error in the token " + msg)
-			return false, 401, msg
+			fmt.Println("Error in the token: " + err.Error())
+			return false, http.StatusUnauthorized, err.Error()
 		}
+		fmt.Println("Error in the token: " + msg)
+		return false, http.StatusUnauthorized, msg
 	}
 
-	fmt.Println("Everything it's OK!")
-	return true, 200, msg
+	fmt.Println("Authorization OK!")
+	return true, http.StatusOK, msg
 }
 
 func UserActions(body, path, method, user, id string, request events.APIGatewayV2HTTPRequest) (int, string) {
-	switch method {
-	case "GET":
-	case "POST":
-	case "PUT":
-	case "DELETE":
+	if path == "/user/me" {
+		if method == "GET" {
+			return routers.GetMyUser(user)
+		} else if method == "PUT" {
+			return routers.PutUser(body, user)
+		}
 	}
-	return 400, "Method Invalid"
+
+	if path == "/user" {
+		return routers.GetAllUsers(user, request)
+	}
+
+	return http.StatusBadRequest, "Method Invalid"
 }
 
 func ProductsActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
 	switch method {
 	case "GET":
-		if id != 0 {
-			return routers.GetProduct(id)
-		}
-		return routers.GetAllProducts()
+		return routers.GetProduct(request)
 
 	case "POST":
 		return routers.PostProduct(user, body)
@@ -97,7 +99,7 @@ func ProductsActions(body, path, method, user string, id int, request events.API
 	case "DELETE":
 		return routers.DeleteProduct(user, id)
 	}
-	return 400, "Method Invalid"
+	return http.StatusBadRequest, "Method Invalid"
 }
 
 func CategoryActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
@@ -111,16 +113,16 @@ func CategoryActions(body, path, method, user string, id int, request events.API
 		return routers.PostCategory(user, body)
 	case "PUT":
 		if id == 0 {
-			return 400, "ID is required for PUT method"
+			return http.StatusBadRequest, "ID is required for PUT method"
 		}
 		return routers.PutCategory(user, body, id)
 	case "DELETE":
 		if id == 0 {
-			return 400, "ID is required for DELETE method"
+			return http.StatusBadRequest, "ID is required for DELETE method"
 		}
 		return routers.DeleteCategory(user, id)
 	}
-	return 400, "Method Invalid"
+	return http.StatusBadRequest, "Method Invalid"
 }
 
 func OrderDetailsActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
@@ -137,7 +139,7 @@ func OrderDetailsActions(body, path, method, user string, id int, request events
 	case "DELETE":
 		return routers.DeleteOrderDetail(user, id)
 	}
-	return 400, "Method Invalid"
+	return http.StatusBadRequest, "Method Invalid"
 }
 
 func OrderActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
@@ -154,7 +156,7 @@ func OrderActions(body, path, method, user string, id int, request events.APIGat
 	case "DELETE":
 		return routers.DeleteOrder(user, id)
 	}
-	return 400, "Method Invalid"
+	return http.StatusBadRequest, "Method Invalid"
 }
 
 func AddressActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
@@ -171,7 +173,7 @@ func AddressActions(body, path, method, user string, id int, request events.APIG
 	case "DELETE":
 		return routers.DeleteAddress(user, id)
 	}
-	return 400, "Method Invalid"
+	return http.StatusBadRequest, "Method Invalid"
 }
 
 func ProviderActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
@@ -188,5 +190,5 @@ func ProviderActions(body, path, method, user string, id int, request events.API
 	case "DELETE":
 		return routers.DeleteProvider(user, id)
 	}
-	return 400, "Method Invalid"
+	return http.StatusBadRequest, "Method Invalid"
 }

@@ -1,14 +1,9 @@
 package database
 
 import (
-	// "database/sql"
 	"fmt"
-	// "strconv"
-	// "strings"
-	// "github.com/go-sql-driver"
 
 	"github.com/berpeda/comercialbermudez/models"
-	// "github.com/berpeda/comercialbermudez/tools"
 )
 
 func InsertCategory(category models.Category) (int64, error) {
@@ -45,39 +40,45 @@ func InsertCategory(category models.Category) (int64, error) {
 	return lastInsertId, nil
 }
 
-func SelectCategory(idCategoria int) (models.Category, error) {
-	fmt.Println("Select a single Product function starts...")
+func SelectCategory(idCategory int) (models.ProductDetails, error) {
+	fmt.Println("Select all products with the same category function starts...")
 
-	var nCategoria models.Category
+	var productsCat models.ProductDetails
 
 	err := DatabaseConnect()
 	if err != nil {
-		return nCategoria, err
+		return productsCat, err
 	}
 
 	defer Database.Close()
 
-	query := "SELECT * FROM Categorias WHERE Id_categoria = ?"
+	query := "SELECT Id_producto, Id_proveedor, Id_categoria, Codigo, Nombre, Precio FROM Productos WHERE Id_categoria = ?"
 
-	result, err := Database.Query(query, idCategoria)
+	result, err := Database.Query(query, idCategory)
 	if err != nil {
 		fmt.Println("Error with the query > ", err.Error())
-		return nCategoria, err
+		return productsCat, err
 	}
 
-	result.Next()
-	err = result.Scan(
-		&nCategoria.IdCategory,
-		&nCategoria.NameCategory,
-		&nCategoria.DescriptionCategory)
+	for result.Next() {
+		var p models.Product
+		err = result.Scan(
+			&p.IdProduct,
+			&p.IdProvider,
+			&p.IdCategory,
+			&p.CodeProduct,
+			&p.NameProduct,
+			&p.PriceProduct)
 
-	if err != nil {
-		fmt.Println("result.Scan is having issues...")
-		return nCategoria, err
+		if err != nil {
+			fmt.Println("result.Scan is having issues...")
+			return productsCat, err
+		}
+		productsCat.TotalProducts = append(productsCat.TotalProducts, p)
 	}
 
-	fmt.Printf("Category selected successfully.")
-	return nCategoria, nil
+	fmt.Printf("Products with a specific category (%d) selected successfully.", idCategory)
+	return productsCat, nil
 }
 
 func SelectAllCategories() ([]models.Category, error) {

@@ -11,4 +11,6 @@ type Product struct {
 	CreatedAt          string  `json:"CreatedAt"`
 	UpdatedAt          string  `json:"UpdatedAt"`
 	Stock              int     `json:"Stock"`
+	PathProduct        string  `json:"PathProduct"`
+	SearchProduct      string  `json:"SearchProduct,omitempty"`
 }

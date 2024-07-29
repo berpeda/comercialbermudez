@@ -3,6 +3,7 @@ package database
 import (
 	"fmt"
 	"math"
+	"strings"
 
 	"github.com/berpeda/comercialbermudez/models"
 	"github.com/berpeda/comercialbermudez/tools"
@@ -21,8 +22,8 @@ func InsertProduct(product models.Product) (int64, error) {
 	// This round the price to 2 decimals in case the product price have more than 2
 	roundPrice := math.Round(product.PriceProduct*100) / 100
 
-	query := "INSERT INTO Productos (Id_proveedor, Id_categoria, Codigo, Nombre, Descripcion, Precio, Creado, Stock) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
-	result, err := Database.Exec(query, product.IdProvider, product.IdCategory, product.CodeProduct, product.NameProduct, product.DescriptionProduct, roundPrice, tools.DateMySQL(), product.Stock)
+	query := "INSERT INTO Productos (Id_proveedor, Id_categoria, Codigo, Nombre, Descripcion, Precio, Creado, Stock, Ruta) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)"
+	result, err := Database.Exec(query, product.IdProvider, product.IdCategory, product.CodeProduct, product.NameProduct, product.DescriptionProduct, roundPrice, tools.DateMySQL(), product.Stock, product.PathProduct)
 
 	if err != nil {
 		fmt.Println("Error with the query > ", err.Error())
@@ -45,94 +46,87 @@ func InsertProduct(product models.Product) (int64, error) {
 
 }
 
-func SelectProduct(idProduct int) (models.Product, error) {
+func SelectProduct(product models.Product, action string, page, pageSize int, order, orderField string) (models.ProductDetails, error) {
 	fmt.Println("Select a single Product function starts...")
 
 	var nProduct models.Product
+	var resultSelect models.ProductDetails
+	var productsT []models.Product
 
 	err := DatabaseConnect()
 	if err != nil {
-		return nProduct, err
-	}
-
-	defer Database.Close()
-
-	query := "SELECT * FROM Productos WHERE Id_producto = ?"
-
-	result, err := Database.Query(query, idProduct)
-	if err != nil {
-		fmt.Println("Error with the query > ", err.Error())
-		return nProduct, err
-	}
-
-	result.Next()
-	err2 := result.Scan(&nProduct.IdProduct,
-		&nProduct.IdProvider,
-		&nProduct.IdCategory,
-		&nProduct.CodeProduct,
-		&nProduct.NameProduct,
-		&nProduct.DescriptionProduct,
-		&nProduct.PriceProduct,
-		&nProduct.CreatedAt,
-		&nProduct.UpdatedAt,
-		&nProduct.Stock)
-
-	if err2 != nil {
-		fmt.Println("result.Scan is having issues...")
-		return nProduct, err2
-	}
-
-	fmt.Printf("Product selected successfully.")
-
-	return nProduct, nil
-}
-
-func SelectAllProducts() ([]models.Product, error) {
-	fmt.Println("Select All Products is starting...")
-
-	var products []models.Product
-
-	err := DatabaseConnect()
-	if err != nil {
-		return products, err
+		return resultSelect, err
 	}
 
 	defer Database.Close()
 
 	query := "SELECT * FROM Productos"
-	result, err := Database.Query(query)
+	where := ""
+	params := []interface{}{}
+
+	if action == "P" {
+		where = " WHERE Id_producto = ?"
+		params = append(params, product.IdProduct)
+	} else if action == "S" {
+		where = " WHERE UCASE(CONCAT(Nombre, Descripcion)) LIKE ?"
+		params = append(params, "%"+strings.ToUpper(product.SearchProduct)+"%")
+	}
+
+	if where != "" {
+		query += where
+	}
+
+	if len(orderField) != 0 {
+		if orderField == "P" {
+			query += " ORDER BY Precio"
+		} else if orderField == "N" {
+			query += " ORDER BY Nombre"
+		}
+		if order == "Desc" {
+			query += " DESC"
+		}
+	}
+
+	if page > 0 && pageSize > 0 {
+		offset := pageSize * (page - 1)
+		query += fmt.Sprintf(" LIMIT %d OFFSET %d", pageSize, offset)
+	}
+
+	fmt.Println("The sentences is > ", query)
+	fmt.Println("The params for the sentence are > ", params)
+
+	result, err := Database.Query(query, params...)
 	if err != nil {
 		fmt.Println("Error with the query > ", err.Error())
-		return products, err
+		return resultSelect, err
 	}
 
 	for result.Next() {
-		var product models.Product
-		err = result.Scan(&product.IdProduct,
-			&product.IdProvider,
-			&product.IdCategory,
-			&product.CodeProduct,
-			&product.NameProduct,
-			&product.DescriptionProduct,
-			&product.PriceProduct,
-			&product.CreatedAt,
-			&product.UpdatedAt,
-			&product.Stock)
+		err2 := result.Scan(&nProduct.IdProduct,
+			&nProduct.IdProvider,
+			&nProduct.IdCategory,
+			&nProduct.CodeProduct,
+			&nProduct.NameProduct,
+			&nProduct.DescriptionProduct,
+			&nProduct.PriceProduct,
+			&nProduct.CreatedAt,
+			&nProduct.UpdatedAt,
+			&nProduct.Stock,
+			&nProduct.PathProduct)
 
-		if err != nil {
-			fmt.Println("Unable to Scan all the products > " + err.Error())
-			panic(err)
+		if err2 != nil {
+			fmt.Println("result.Scan is having issues...")
+			return resultSelect, err2
 		}
-		products = append(products, product)
+
+		productsT = append(productsT, nProduct)
 	}
 
-	if err = result.Err(); err != nil {
-		panic(err)
-	}
+	resultSelect.TotalProducts = productsT
 
-	fmt.Println("Products Selected successfully!")
+	fmt.Printf("Products selected successfully.")
 
-	return products, nil
+	return resultSelect, nil
 }
 
 func UpdateProduct(p models.Product, idProduct int) (models.Product, error) {
@@ -144,21 +138,66 @@ func UpdateProduct(p models.Product, idProduct int) (models.Product, error) {
 	}
 	defer Database.Close()
 
-	query := "UPDATE Productos SET Id_proveedor = ?, Id_categoria = ?, Codigo = ?, Nombre = ?, Descripcion = ?, Actualizado = ?, Stock = ? WHERE Id_producto = ?"
+	query := "UPDATE Productos SET"
+	params := []interface{}{}
+	if p.IdProvider != 0 {
+		query += " Id_proveedor = ?,"
+		params = append(params, p.IdProvider)
+	}
 
-	_, err = Database.Exec(query, p.IdProvider, p.IdCategory, p.CodeProduct, p.NameProduct, p.DescriptionProduct, tools.DateMySQL(), p.Stock, idProduct)
+	if p.IdCategory != 0 {
+		query += " Id_categoria = ?,"
+		params = append(params, p.IdCategory)
+	}
+
+	if len(p.CodeProduct) != 0 {
+		query += " Codigo = ?,"
+		params = append(params, p.CodeProduct)
+	}
+
+	if len(p.NameProduct) != 0 {
+		query += " Nombre = ?,"
+		params = append(params, p.NameProduct)
+	}
+
+	if len(p.DescriptionProduct) != 0 {
+		query += " Descripcion = ?,"
+		params = append(params, p.DescriptionProduct)
+	}
+
+	if p.PriceProduct != 0 {
+		query += " Precio = ?,"
+		params = append(params, p.PriceProduct)
+	}
+
+	if p.Stock > 0 {
+		query += " Stock = ?,"
+		params = append(params, p.Stock)
+	}
+
+	if len(p.PathProduct) != 0 {
+		query += " Ruta = ?,"
+		params = append(params, p.PathProduct)
+	}
+
+	// Remove the trailing comma
+	query = query[:len(query)-1]
+	query += " WHERE Id_producto = ?"
+	params = append(params, idProduct)
+
+	_, err = Database.Exec(query, params...)
 	if err != nil {
 		return p, err
 	}
 
-	query = "SELECT Id_producto, Id_proveedor, Id_categoria, Codigo, Nombre, Descripcion, Precio, Creado, Actualizado, Stock FROM Productos WHERE Id_producto = ?"
+	query = "SELECT Id_producto, Id_proveedor, Id_categoria, Codigo, Nombre, Descripcion, Precio, Creado, Actualizado, Stock, Ruta FROM Productos WHERE Id_producto = ?"
 	result, err2 := Database.Query(query, idProduct)
 	if err2 != nil {
 		return p, err2
 	}
 
 	result.Next()
-	err = result.Scan(&p.IdProduct, &p.IdProvider, &p.IdCategory, &p.CodeProduct, &p.NameProduct, &p.DescriptionProduct, &p.PriceProduct, &p.CreatedAt, &p.UpdatedAt, &p.Stock)
+	err = result.Scan(&p.IdProduct, &p.IdProvider, &p.IdCategory, &p.CodeProduct, &p.NameProduct, &p.DescriptionProduct, &p.PriceProduct, &p.CreatedAt, &p.UpdatedAt, &p.Stock, &p.PathProduct)
 	if err != nil {
 		return p, err
 	}

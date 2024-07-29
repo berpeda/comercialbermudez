@@ -144,7 +144,7 @@ func UpdateAddress(address models.Address, idAddress int) (models.Address, error
 	query = "SELECT * FROM Direcciones WHERE Id_direccion = ?"
 	result, err2 := Database.Query(query, idAddress)
 	if err2 != nil {
-		fmt.Println("Error with the SELECT query > ", err.Error())
+		fmt.Println("Error with the SELECT query > ", err2.Error())
 		return address, err
 	}
 
