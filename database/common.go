@@ -62,6 +62,8 @@ func IsAdmin(userUUID string) (bool, string) {
 		return false, err.Error()
 	}
 
+	defer res.Close()
+
 	var value string
 	res.Next()
 	res.Scan(&value)

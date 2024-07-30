@@ -60,6 +60,8 @@ func SelectCategory(idCategory int) (models.ProductDetails, error) {
 		return productsCat, err
 	}
 
+	defer result.Close()
+
 	for result.Next() {
 		var p models.Product
 		err = result.Scan(
@@ -99,6 +101,8 @@ func SelectAllCategories() ([]models.Category, error) {
 		fmt.Println("Error with the query > ", err.Error())
 		return categories, err
 	}
+
+	defer result.Close()
 
 	for result.Next() {
 		var category models.Category

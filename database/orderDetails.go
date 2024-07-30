@@ -27,6 +27,8 @@ func SelectOrderDetail(idOrderDetail int) (models.OrderDetails, error) {
 		return oDetail, err
 	}
 
+	defer result.Close()
+
 	result.Next()
 	err2 := result.Scan(&oDetail.IdOrderDetail,
 		&oDetail.IdOrder,
@@ -64,6 +66,8 @@ func SelectAllOrdersDetails() ([]models.OrderDetails, error) {
 		return oDetails, err
 	}
 
+	defer result.Close()
+
 	for result.Next() {
 		var oDetail models.OrderDetails
 		err2 := result.Scan(&oDetail.IdOrderDetail,
@@ -72,8 +76,8 @@ func SelectAllOrdersDetails() ([]models.OrderDetails, error) {
 			&oDetail.QuantityOrderDetail,
 			&oDetail.PriceOrderDetail)
 		if err2 != nil {
-			fmt.Println("Unable to Scan all the order details > " + err.Error())
-			panic(err)
+			fmt.Println("Unable to Scan all the order details > " + err2.Error())
+			return oDetails, err2
 		}
 		oDetails = append(oDetails, oDetail)
 	}
@@ -143,6 +147,8 @@ func UpdateOrderDetail(updateOrderDetail models.OrderDetails, idOrderDetail int)
 	if err2 != nil {
 		return updateOrderDetail, err
 	}
+
+	defer result.Close()
 
 	result.Next()
 	err = result.Scan(&updateOrderDetail.IdOrderDetail,

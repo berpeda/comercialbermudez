@@ -6,5 +6,5 @@ type Order struct {
 	IdAddress  int     `json:"IdAddress"`
 	Total      float64 `json:"Total"`
 	CreatedAt  string  `json:"CreatedAt"`
-	OrderSlice []OrderDetails
+	OrderItems []OrderDetails
 }

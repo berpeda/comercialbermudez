@@ -52,6 +52,8 @@ func UpdateUser(user models.User, idUser string) (models.User, error) {
 		return us, err
 	}
 
+	defer result.Close()
+
 	var userName sql.NullString
 	var userSurname sql.NullString
 
@@ -86,6 +88,8 @@ func SelectAllUsers() (models.UserDetails, error) {
 	if err != nil {
 		return usersDetails, err
 	}
+
+	defer result.Close()
 
 	for result.Next() {
 		var user models.User
@@ -129,6 +133,8 @@ func SelectMyUser(idUser string) (models.User, error) {
 		fmt.Println("Error with the query > ", err.Error())
 		return user, err
 	}
+
+	defer result.Close()
 
 	result.Next()
 

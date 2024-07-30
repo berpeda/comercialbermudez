@@ -2,93 +2,115 @@ package database
 
 import (
 	"fmt"
-	"math"
 
 	"github.com/berpeda/comercialbermudez/models"
 	"github.com/berpeda/comercialbermudez/tools"
 )
 
-func SelectOrder(idOrder int) (models.Order, error) {
-	fmt.Println("Select a single Order function starts...")
-
-	var order models.Order
-
-	err := DatabaseConnect()
-	if err != nil {
-		return order, err
-	}
-
-	defer Database.Close()
-
-	query := "SELECT * FROM Pedidos WHERE Id_pedido = ?"
-
-	result, err := Database.Query(query, idOrder)
-	if err != nil {
-		fmt.Println("Error with the query > ", err.Error())
-		return order, err
-	}
-
-	result.Next()
-	err2 := result.Scan(&order.IdOrder,
-		&order.UUIDUser,
-		&order.IdAddress,
-		&order.Total,
-		&order.CreatedAt)
-
-	if err2 != nil {
-		fmt.Println("result.Scan is having issues...")
-		return order, err2
-	}
-
-	fmt.Printf("Order selected successfully.")
-
-	return order, nil
-}
-
-func SelectAllOrders() ([]models.Order, error) {
-	fmt.Println("Select all Orders function starts...")
+func SelectOrders(user string, idOrder, page int) ([]models.Order, error) {
+	fmt.Println("Select Order function starts...")
 
 	var orders []models.Order
 
+	query := "SELECT * FROM Pedidos"
+	params := []interface{}{}
+
+	if idOrder > 0 {
+		query += " WHERE Id_pedido = ?"
+		params = append(params, idOrder)
+	} else {
+		offset := 0
+		if page == 0 {
+			page = 1
+		}
+		if page > 1 {
+			offset = (10 * (page - 1))
+		}
+
+		where := ""
+		whereUser := " UUID_usuario = ?"
+
+		if where != "" {
+			where += " AND " + whereUser
+			params = append(params, user)
+		} else {
+			where = " WHERE " + whereUser
+			params = append(params, user)
+		}
+
+		limit := " LIMIT 10"
+		if offset > 0 {
+			limit += " OFFSET ?"
+			params = append(params, offset)
+		}
+
+		query += where + limit
+	}
+
+	fmt.Println(query)
+	fmt.Println(params)
+
 	err := DatabaseConnect()
+
 	if err != nil {
 		return orders, err
 	}
-
 	defer Database.Close()
 
-	query := "SELECT * FROM Pedidos"
-	result, err := Database.Query(query)
+	result, err := Database.Query(query, params...)
 	if err != nil {
-		fmt.Println("Error with the query > ", err.Error())
+		fmt.Println("Error trying to do the query.")
 		return orders, err
 	}
 
+	defer result.Close()
+
 	for result.Next() {
-		var order models.Order
-		err = result.Scan(&order.IdOrder,
-			&order.UUIDUser,
-			&order.IdAddress,
-			&order.Total,
-			&order.CreatedAt)
+		var o models.Order
+		err2 := result.Scan(&o.IdOrder,
+			&o.UUIDUser,
+			&o.IdAddress,
+			&o.Total,
+			&o.CreatedAt)
 
-		if err != nil {
-			fmt.Println("Unable to Scan all the orders > " + err.Error())
-			panic(err)
+		if err2 != nil {
+			fmt.Println("Error trying to scan the order.")
+			return orders, err2
 		}
-		orders = append(orders, order)
+
+		query = "SELECT * FROM Detalle_pedido WHERE Id_pedido = ?"
+		r2, err := Database.Query(query, o.IdOrder)
+		if err != nil {
+			return orders, err
+		}
+
+		defer r2.Close()
+
+		for r2.Next() {
+			var od models.OrderDetails
+			err3 := r2.Scan(
+				&od.IdOrderDetail,
+				&od.IdOrder,
+				&od.IdProduct,
+				&od.QuantityOrderDetail,
+				&od.PriceOrderDetail)
+
+			if err3 != nil {
+				fmt.Println("Error trying to scan the order detail.")
+				return orders, err3
+			}
+			o.OrderItems = append(o.OrderItems, od)
+		}
+
+		orders = append(orders, o)
 	}
 
-	if err = result.Err(); err != nil {
-		panic(err)
-	}
-
-	fmt.Println("Orders Selected successfully!")
+	fmt.Println("Order selected succesfully!")
 
 	return orders, nil
 }
 
-func InsertOrder(order models.Order) (int64, error) {
+func InsertOrder(order models.Order, idUser string) (int64, error) {
 	fmt.Println("Insert Order function starts...")
 
 	err := DatabaseConnect()
@@ -98,11 +120,8 @@ func InsertOrder(order models.Order) (int64, error) {
 
 	defer Database.Close()
 
-	// This round the price to 2 decimals in case the order price have more than 2
-	roundTotal := math.Round(order.Total*100) / 100
-
 	query := "INSERT INTO Pedidos (UUID_usuario, Id_direccion, Total, Creado) VALUES (?, ?, ?, ?)"
-	result, err := Database.Exec(query, order.UUIDUser, order.IdAddress, roundTotal, tools.DateMySQL())
+	result, err := Database.Exec(query, idUser, order.IdAddress, order.Total, tools.DateMySQL())
 	if err != nil {
 		fmt.Println("Error with the query > ", err.Error())
 		return 0, err
@@ -118,41 +137,18 @@ func InsertOrder(order models.Order) (int64, error) {
 		fmt.Println("Error retrieving the number of rows affected > ", err.Error())
 	}
 
+	for _, orderD := range order.OrderItems {
+		query = "INSERT INTO Detalle_pedido (Id_pedido, Id_producto, Cantidad, Precio) VALUES (?, ?, ?, ?)"
+		_, err = Database.Exec(query, lastInsertId, orderD.IdProduct, orderD.QuantityOrderDetail, orderD.PriceOrderDetail)
+		if err != nil {
+			fmt.Println("Error trying to INSERT the Order Detail > ", err.Error())
+			return 0, err
+		}
+	}
+
 	fmt.Printf("Order inserted successfully.\nIndex inserted > %d\n The row(s) affected > %d", lastInsertId, rowsAffected)
 
 	return lastInsertId, nil
-}
-
-func UpdateOrder(order models.Order, idOrder int) (models.Order, error) {
-	fmt.Println("Update order is starting...")
-
-	err := DatabaseConnect()
-	if err != nil {
-		return order, err
-	}
-
-	defer Database.Close()
-
-	query := "UPDATE Pedidos SET UUID_usuario = ?, Id_direccion = ?, Total = ?, Creado = ? WHERE Id_pedido = ?"
-	_, err = Database.Exec(query, order.UUIDUser, order.IdAddress, order.Total, order.CreatedAt, idOrder)
-	if err != nil {
-		return order, err
-	}
-
-	query = "SELECT * FROM Pedidos WHERE Id_pedido = ?"
-	result, err2 := Database.Query(query, idOrder)
-	if err2 != nil {
-		return order, err
-	}
-
-	result.Next()
-	err = result.Scan(&order.IdOrder, &order.UUIDUser, &order.IdAddress, &order.Total, &order.CreatedAt)
-	if err != nil {
-		return order, err
-	}
-
-	fmt.Println("The order has been updated successfully!")
-	return order, nil
 }
 
 func DeleteOrder(idOrder int) (int64, error) {

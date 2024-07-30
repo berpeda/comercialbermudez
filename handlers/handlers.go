@@ -29,8 +29,6 @@ func Handlers(path, method, body string, header map[string]string, request event
 		return UserActions(body, path, method, user, id, request)
 	case "/prod":
 		return ProductsActions(body, path, method, user, idn, request)
-	case "/odet":
-		return OrderDetailsActions(body, path, method, user, idn, request)
 	case "/addr":
 		return AddressActions(body, path, method, user, idn, request)
 	case "/prov":
@@ -125,34 +123,12 @@ func CategoryActions(body, path, method, user string, id int, request events.API
 	return http.StatusBadRequest, "Method Invalid"
 }
 
-func OrderDetailsActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
-	switch method {
-	case "GET":
-		if id != 0 {
-			return routers.GetOrderDetail(id)
-		}
-		return routers.GetAllOrderDetails()
-	case "POST":
-		return routers.PostOrderDetail(user, body)
-	case "PUT":
-		return routers.PutOrderDetail(user, body, id)
-	case "DELETE":
-		return routers.DeleteOrderDetail(user, id)
-	}
-	return http.StatusBadRequest, "Method Invalid"
-}
-
 func OrderActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
 	switch method {
 	case "GET":
-		if id != 0 {
-			return routers.GetOrder(id)
-		}
-		return routers.GetAllOrders()
+		return routers.GetOrders(user, request)
 	case "POST":
 		return routers.PostOrder(user, body)
-	case "PUT":
-		return routers.PutOrder(user, body, id)
 	case "DELETE":
 		return routers.DeleteOrder(user, id)
 	}
@@ -160,12 +136,14 @@ func OrderActions(body, path, method, user string, id int, request events.APIGat
 }
 
 func AddressActions(body, path, method, user string, id int, request events.APIGatewayV2HTTPRequest) (int, string) {
+	fmt.Println(path)
 	switch method {
 	case "GET":
-		if id != 0 {
-			return routers.GetAddress(id)
+		if path == "/address/me" {
+			return routers.GetAddress(user)
+		} else if path == "/address" {
+			return routers.GetAllAddress(user)
 		}
-		return routers.GetAllAddress()
 	case "POST":
 		return routers.PostAddress(user, body)
 	case "PUT":

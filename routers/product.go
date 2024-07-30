@@ -60,7 +60,7 @@ func GetProduct(request events.APIGatewayV2HTTPRequest) (int, string) {
 
 	if len(params["Search"]) > 0 {
 		action = "S"
-		product.SearchProduct, _ = params["Search"]
+		product.SearchProduct = params["Search"]
 	}
 
 	result, err := database.SelectProduct(product, action, page, pageSize, order, orderField)

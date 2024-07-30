@@ -9,10 +9,10 @@ import (
 	"github.com/berpeda/comercialbermudez/models"
 )
 
-func GetAddress(id int) (int, string) {
-	result, err := database.SelectAddress(id)
+func GetAddress(user string) (int, string) {
+	result, err := database.SelectAddress(user)
 	if err != nil {
-		return http.StatusBadRequest, "Error trying to SELECT the Address with ID > " + strconv.Itoa(id) +
+		return http.StatusBadRequest, "Error trying to SELECT the Address of the user > " + user +
 			"\nError > " + err.Error()
 	}
 
@@ -24,7 +24,12 @@ func GetAddress(id int) (int, string) {
 	return http.StatusOK, string(jsonData)
 }
 
-func GetAllAddress() (int, string) {
+func GetAllAddress(user string) (int, string) {
+
+	isAdmin, issue := database.IsAdmin(user)
+	if !isAdmin {
+		return http.StatusBadRequest, issue
+	}
 
 	result, err := database.SelectAllAddress()
 	if err != nil {
@@ -36,7 +41,7 @@ func GetAllAddress() (int, string) {
 		return http.StatusBadRequest, "Error trying to serialize result to JSON format."
 	}
 
-	return http.StatusBadRequest, string(jsonData)
+	return http.StatusOK, string(jsonData)
 }
 
 func PostAddress(user, body string) (int, string) {
@@ -53,13 +58,13 @@ func PostAddress(user, body string) (int, string) {
 		return http.StatusBadRequest, "There is an error with received data " + err.Error()
 	}
 
-	if len(address.UUIDUser) == 0 || len(address.NameAddress) == 0 ||
+	if len(address.NameAddress) == 0 ||
 		len(address.StateAddress) == 0 || len(address.CityAddress) == 0 ||
 		len(address.PhoneAddress) == 0 || len(address.PostalCodeAddress) == 0 {
 		return http.StatusBadRequest, "The UUUID of user, Name, State, City, Phone and Postal Code must be filled."
 	}
 
-	result, err := database.InsertAddress(address)
+	result, err := database.InsertAddress(address, user)
 	if err != nil {
 		return http.StatusBadRequest, "Error trying to INSERT the address ID > " + strconv.Itoa(address.IdAddress) + "\nError > " + err.Error()
 	}
@@ -79,7 +84,7 @@ func PutAddress(user, body string, id int) (int, string) {
 		return http.StatusBadRequest, "There is an issue with received data " + err.Error()
 	}
 
-	if len(updateAddress.UUIDUser) == 0 || len(updateAddress.NameAddress) == 0 ||
+	if len(updateAddress.NameAddress) == 0 ||
 		len(updateAddress.StateAddress) == 0 || len(updateAddress.CityAddress) == 0 ||
 		len(updateAddress.PhoneAddress) == 0 || len(updateAddress.PostalCodeAddress) == 0 {
 

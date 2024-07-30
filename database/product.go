@@ -101,6 +101,8 @@ func SelectProduct(product models.Product, action string, page, pageSize int, or
 		return resultSelect, err
 	}
 
+	defer result.Close()
+
 	for result.Next() {
 		err2 := result.Scan(&nProduct.IdProduct,
 			&nProduct.IdProvider,
@@ -195,6 +197,8 @@ func UpdateProduct(p models.Product, idProduct int) (models.Product, error) {
 	if err2 != nil {
 		return p, err2
 	}
+
+	defer result.Close()
 
 	result.Next()
 	err = result.Scan(&p.IdProduct, &p.IdProvider, &p.IdCategory, &p.CodeProduct, &p.NameProduct, &p.DescriptionProduct, &p.PriceProduct, &p.CreatedAt, &p.UpdatedAt, &p.Stock, &p.PathProduct)

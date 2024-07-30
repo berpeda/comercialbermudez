@@ -6,43 +6,47 @@ import (
 	"github.com/berpeda/comercialbermudez/models"
 )
 
-func SelectAddress(id int) (models.Address, error) {
+func SelectAddress(idUser string) ([]models.Address, error) {
 	fmt.Println("Select a single Address function starts...")
 
-	var address models.Address
+	var userAddress []models.Address
 
 	err := DatabaseConnect()
 	if err != nil {
-		return address, err
+		return userAddress, err
 	}
 
 	defer Database.Close()
 
-	query := "SELECT * FROM Direcciones WHERE Id_direccion = ?"
+	query := "SELECT * FROM Direcciones WHERE UUID_usuario = ?"
 
-	result, err := Database.Query(query, id)
+	result, err := Database.Query(query, idUser)
 	if err != nil {
 		fmt.Println("Error with the query > ", err.Error())
-		return address, err
+		return userAddress, err
 	}
 
-	result.Next()
-	err2 := result.Scan(&address.IdAddress,
-		&address.UUIDUser,
-		&address.NameAddress,
-		&address.CityAddress,
-		&address.StateAddress,
-		&address.PhoneAddress,
-		&address.PostalCodeAddress)
+	defer result.Close()
 
-	if err2 != nil {
-		fmt.Println("result.Scan is having issues...")
-		return address, err2
+	for result.Next() {
+		var address models.Address
+		err2 := result.Scan(&address.IdAddress,
+			&address.UUIDUser,
+			&address.NameAddress,
+			&address.CityAddress,
+			&address.StateAddress,
+			&address.PhoneAddress,
+			&address.PostalCodeAddress)
+		if err2 != nil {
+			fmt.Println("result.Scan is having issues...")
+			return userAddress, err2
+		}
+		userAddress = append(userAddress, address)
 	}
 
 	fmt.Printf("Address selected successfully.")
 
-	return address, nil
+	return userAddress, nil
 }
 
 func SelectAllAddress() ([]models.Address, error) {
@@ -63,6 +67,8 @@ func SelectAllAddress() ([]models.Address, error) {
 		fmt.Println("Error with the query > ", err.Error())
 		return addresses, err
 	}
+
+	defer result.Close()
 
 	for result.Next() {
 		var address models.Address
@@ -90,7 +96,7 @@ func SelectAllAddress() ([]models.Address, error) {
 	return addresses, nil
 }
 
-func InsertAddress(address models.Address) (int64, error) {
+func InsertAddress(address models.Address, idUser string) (int64, error) {
 	fmt.Println("Insert Address function starts...")
 
 	err := DatabaseConnect()
@@ -101,7 +107,7 @@ func InsertAddress(address models.Address) (int64, error) {
 	defer Database.Close()
 
 	query := "INSERT INTO Direcciones (UUID_usuario, Nombre, Poblacion, Provincia, Telefono, Codigo_postal) VALUES (?, ?, ?, ?, ?, ?)"
-	result, err := Database.Exec(query, address.UUIDUser,
+	result, err := Database.Exec(query, idUser,
 		address.NameAddress, address.CityAddress,
 		address.StateAddress, address.PhoneAddress, address.PostalCodeAddress)
 	if err != nil {
@@ -147,6 +153,8 @@ func UpdateAddress(address models.Address, idAddress int) (models.Address, error
 		fmt.Println("Error with the SELECT query > ", err2.Error())
 		return address, err
 	}
+
+	defer result.Close()
 
 	result.Next()
 	err = result.Scan(&address.IdAddress, &address.UUIDUser, &address.NameAddress, &address.CityAddress, &address.StateAddress, &address.PhoneAddress, &address.PostalCodeAddress)

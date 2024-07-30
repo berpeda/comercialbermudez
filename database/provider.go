@@ -26,6 +26,8 @@ func SelectProvider(idProvider int) (models.Provider, error) {
 		return provider, err
 	}
 
+	defer result.Close()
+
 	result.Next()
 	err2 := result.Scan(&provider.IdProvider,
 		&provider.NameProvider,
@@ -60,6 +62,8 @@ func SelectAllProviders() ([]models.Provider, error) {
 		fmt.Println("Error with the query > ", err.Error())
 		return providers, err
 	}
+
+	defer result.Close()
 
 	for result.Next() {
 		var provider models.Provider
@@ -139,6 +143,8 @@ func UpdateProvider(provider models.Provider, idProvider int) (models.Provider, 
 		fmt.Println("Error with the SELECT query > ", err.Error())
 		return provider, err
 	}
+
+	defer result.Close()
 
 	result.Next()
 	err = result.Scan(&provider.IdProvider, &provider.NameProvider, &provider.PhoneNumberProvider, &provider.EmailProvider)
