@@ -6,11 +6,13 @@ import (
 	"github.com/berpeda/comercialbermudez/models"
 )
 
+// SelectProvider retrieves a single provider based on the provided ID.
 func SelectProvider(idProvider int) (models.Provider, error) {
 	fmt.Println("Select a single Provider starts...")
 
 	var provider models.Provider
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return provider, err
@@ -18,6 +20,7 @@ func SelectProvider(idProvider int) (models.Provider, error) {
 
 	defer Database.Close()
 
+	// Query to select a provider by its ID
 	query := "SELECT * FROM Proveedores WHERE Id_proveedor = ?"
 
 	result, err := Database.Query(query, idProvider)
@@ -28,6 +31,7 @@ func SelectProvider(idProvider int) (models.Provider, error) {
 
 	defer result.Close()
 
+	// Scan the result into the provider struct
 	result.Next()
 	err2 := result.Scan(&provider.IdProvider,
 		&provider.NameProvider,
@@ -44,11 +48,13 @@ func SelectProvider(idProvider int) (models.Provider, error) {
 	return provider, nil
 }
 
+// SelectAllProviders retrieves all providers from the database.
 func SelectAllProviders() ([]models.Provider, error) {
 	fmt.Println("Select all Provider starts...")
 
 	var providers []models.Provider
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return providers, err
@@ -56,6 +62,7 @@ func SelectAllProviders() ([]models.Provider, error) {
 
 	defer Database.Close()
 
+	// Query to select all providers
 	query := "SELECT * FROM Proveedores"
 	result, err := Database.Query(query)
 	if err != nil {
@@ -65,6 +72,7 @@ func SelectAllProviders() ([]models.Provider, error) {
 
 	defer result.Close()
 
+	// Scan each result into the providers slice
 	for result.Next() {
 		var provider models.Provider
 		err = result.Scan(&provider.IdProvider,
@@ -88,9 +96,11 @@ func SelectAllProviders() ([]models.Provider, error) {
 	return providers, nil
 }
 
+// InsertProvider adds a new provider to the database and returns its ID.
 func InsertProvider(provider models.Provider) (int64, error) {
 	fmt.Println("Insert a Provider starts...")
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return 0, err
@@ -98,6 +108,7 @@ func InsertProvider(provider models.Provider) (int64, error) {
 
 	defer Database.Close()
 
+	// Query to insert a new provider
 	query := "INSERT INTO Proveedores (Nombre, Telefono, Email) VALUES (?, ?, ?)"
 	result, err := Database.Exec(query, provider.NameProvider, provider.PhoneNumberProvider, provider.EmailProvider)
 	if err != nil {
@@ -120,9 +131,11 @@ func InsertProvider(provider models.Provider) (int64, error) {
 	return lastInsertId, nil
 }
 
+// UpdateProvider updates the details of an existing provider based on its ID.
 func UpdateProvider(provider models.Provider, idProvider int) (models.Provider, error) {
 	fmt.Println("Update provider is starting...")
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return provider, err
@@ -130,6 +143,7 @@ func UpdateProvider(provider models.Provider, idProvider int) (models.Provider, 
 
 	defer Database.Close()
 
+	// Query to update provider details
 	query := "UPDATE Proveedores SET Nombre = ?, Telefono = ?, Email = ? WHERE Id_proveedor = ?"
 	_, err = Database.Exec(query, provider.NameProvider, provider.PhoneNumberProvider, provider.EmailProvider, idProvider)
 	if err != nil {
@@ -137,6 +151,7 @@ func UpdateProvider(provider models.Provider, idProvider int) (models.Provider, 
 		return provider, err
 	}
 
+	// Query to retrieve the updated provider
 	query = "SELECT * FROM Proveedores WHERE Id_proveedor = ?"
 	result, err := Database.Query(query, idProvider)
 	if err != nil {
@@ -146,6 +161,7 @@ func UpdateProvider(provider models.Provider, idProvider int) (models.Provider, 
 
 	defer result.Close()
 
+	// Scan the updated result into the provider struct
 	result.Next()
 	err = result.Scan(&provider.IdProvider, &provider.NameProvider, &provider.PhoneNumberProvider, &provider.EmailProvider)
 	if err != nil {
@@ -157,9 +173,11 @@ func UpdateProvider(provider models.Provider, idProvider int) (models.Provider, 
 	return provider, nil
 }
 
+// DeleteProvider removes a provider from the database based on its ID.
 func DeleteProvider(idProvider int) (int64, error) {
 	fmt.Println("Delete provider is starting...")
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return 0, err
@@ -167,6 +185,7 @@ func DeleteProvider(idProvider int) (int64, error) {
 
 	defer Database.Close()
 
+	// Query to delete a provider by its ID
 	query := "DELETE FROM Proveedores WHERE Id_proveedor = ?"
 	result, err := Database.Exec(query, idProvider)
 	if err != nil {

@@ -7,11 +7,13 @@ import (
 	"github.com/berpeda/comercialbermudez/models"
 )
 
+// SelectOrderDetail retrieves a single order detail from the database based on the provided ID.
 func SelectOrderDetail(idOrderDetail int) (models.OrderDetails, error) {
 	fmt.Println("Select a single Order detail function starts...")
 
 	var oDetail models.OrderDetails
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return oDetail, err
@@ -19,6 +21,7 @@ func SelectOrderDetail(idOrderDetail int) (models.OrderDetails, error) {
 
 	defer Database.Close()
 
+	// Query to select the order detail by its ID
 	query := "SELECT * FROM Detalle_pedido WHERE Id_detalle_pedido = ?"
 
 	result, err := Database.Query(query, idOrderDetail)
@@ -29,6 +32,7 @@ func SelectOrderDetail(idOrderDetail int) (models.OrderDetails, error) {
 
 	defer result.Close()
 
+	// Scan the result into the order detail struct
 	result.Next()
 	err2 := result.Scan(&oDetail.IdOrderDetail,
 		&oDetail.IdOrder,
@@ -46,11 +50,13 @@ func SelectOrderDetail(idOrderDetail int) (models.OrderDetails, error) {
 	return oDetail, nil
 }
 
+// SelectAllOrdersDetails retrieves all order details from the database.
 func SelectAllOrdersDetails() ([]models.OrderDetails, error) {
 	fmt.Println("Select all Order detail function starts...")
 
 	var oDetails []models.OrderDetails
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return oDetails, err
@@ -58,6 +64,7 @@ func SelectAllOrdersDetails() ([]models.OrderDetails, error) {
 
 	defer Database.Close()
 
+	// Query to select all order details
 	query := "SELECT * FROM Detalle_pedido"
 
 	result, err := Database.Query(query)
@@ -68,6 +75,7 @@ func SelectAllOrdersDetails() ([]models.OrderDetails, error) {
 
 	defer result.Close()
 
+	// Scan each result into the order details slice
 	for result.Next() {
 		var oDetail models.OrderDetails
 		err2 := result.Scan(&oDetail.IdOrderDetail,
@@ -91,6 +99,7 @@ func SelectAllOrdersDetails() ([]models.OrderDetails, error) {
 	return oDetails, nil
 }
 
+// InsertOrderDetail adds a new order detail to the database and returns its ID.
 func InsertOrderDetail(oDetail models.OrderDetails) (int64, error) {
 	fmt.Println("Insert Order details function starts...")
 
@@ -101,9 +110,10 @@ func InsertOrderDetail(oDetail models.OrderDetails) (int64, error) {
 
 	defer Database.Close()
 
-	// This round the price to 2 decimals in case the order price have more than 2
+	// Round the price to 2 decimal places
 	roundTotal := math.Round(oDetail.PriceOrderDetail*100) / 100
 
+	// Query to insert a new order detail
 	query := "INSERT INTO Detalle_pedido (Id_pedido, Id_producto, Cantidad, Precio) VALUES (?, ?, ?, ?)"
 	result, err := Database.Exec(query, oDetail.IdOrder, oDetail.IdProduct, oDetail.QuantityOrderDetail, roundTotal)
 	if err != nil {
@@ -126,6 +136,7 @@ func InsertOrderDetail(oDetail models.OrderDetails) (int64, error) {
 	return lastInsertId, nil
 }
 
+// UpdateOrderDetail updates an existing order detail based on its ID.
 func UpdateOrderDetail(updateOrderDetail models.OrderDetails, idOrderDetail int) (models.OrderDetails, error) {
 	fmt.Println("Update order is starting...")
 
@@ -136,12 +147,14 @@ func UpdateOrderDetail(updateOrderDetail models.OrderDetails, idOrderDetail int)
 
 	defer Database.Close()
 
+	// Query to update the order detail
 	query := "UPDATE Detalle_pedido SET Id_pedido = ?, Id_producto = ?, Cantidad = ?, Precio = ? WHERE Id_detalle_pedido = ?"
 	_, err = Database.Exec(query, updateOrderDetail.IdOrder, updateOrderDetail.IdProduct, updateOrderDetail.QuantityOrderDetail, updateOrderDetail.PriceOrderDetail, idOrderDetail)
 	if err != nil {
 		return updateOrderDetail, err
 	}
 
+	// Query to retrieve the updated order detail
 	query = "SELECT * FROM Detalle_pedido WHERE Id_detalle_pedido = ?"
 	result, err2 := Database.Query(query, idOrderDetail)
 	if err2 != nil {
@@ -150,6 +163,7 @@ func UpdateOrderDetail(updateOrderDetail models.OrderDetails, idOrderDetail int)
 
 	defer result.Close()
 
+	// Scan the updated result into the order detail struct
 	result.Next()
 	err = result.Scan(&updateOrderDetail.IdOrderDetail,
 		&updateOrderDetail.IdOrder,
@@ -165,6 +179,7 @@ func UpdateOrderDetail(updateOrderDetail models.OrderDetails, idOrderDetail int)
 	return updateOrderDetail, nil
 }
 
+// DeleteOrderDetail removes an order detail from the database by its ID.
 func DeleteOrderDetail(idOrderDetail int) (int64, error) {
 	fmt.Println("Delete order detail is starting...")
 
@@ -175,6 +190,7 @@ func DeleteOrderDetail(idOrderDetail int) (int64, error) {
 
 	defer Database.Close()
 
+	// Query to delete the order detail by its ID
 	query := "DELETE FROM Detalle_pedido WHERE Id_detalle_pedido = ?"
 	result, err := Database.Exec(query, idOrderDetail)
 	if err != nil {

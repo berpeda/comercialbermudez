@@ -7,11 +7,13 @@ import (
 	"github.com/berpeda/comercialbermudez/models"
 )
 
+// UpdateUser updates an existing user based on its UUID.
 func UpdateUser(user models.User, idUser string) (models.User, error) {
 	fmt.Println("Update User function is starting...")
 
 	var us models.User
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return us, err
@@ -19,10 +21,12 @@ func UpdateUser(user models.User, idUser string) (models.User, error) {
 
 	defer Database.Close()
 
+	// Start building the UPDATE query
 	query := "UPDATE Usuarios SET"
 	params := []interface{}{}
 	sets := ""
 
+	// Conditionally add fields to be updated
 	if len(user.NameUser) != 0 {
 		sets += " Nombre = ?,"
 		params = append(params, user.NameUser)
@@ -32,19 +36,22 @@ func UpdateUser(user models.User, idUser string) (models.User, error) {
 		params = append(params, user.SurnameUser)
 	}
 
+	// Remove trailing comma and append WHERE clause
 	sets = sets[:len(sets)-1]
 	query += sets + " WHERE UUID_usuario = ?"
 	params = append(params, idUser)
 
+	// Execute the UPDATE query
 	_, err = Database.Exec(query, params...)
 	if err != nil {
-		fmt.Println("Error trying the UPDATE sentece.")
+		fmt.Println("Error trying the UPDATE sentence.")
 		fmt.Println("Sentence > ", query)
 		return us, err
 	}
 
 	fmt.Println(query)
 
+	// Retrieve the updated user details
 	query = "SELECT * FROM Usuarios WHERE UUID_usuario = ?"
 	result, err := Database.Query(query, idUser)
 	if err != nil {
@@ -54,6 +61,7 @@ func UpdateUser(user models.User, idUser string) (models.User, error) {
 
 	defer result.Close()
 
+	// Scan the result into the user struct
 	var userName sql.NullString
 	var userSurname sql.NullString
 
@@ -67,15 +75,17 @@ func UpdateUser(user models.User, idUser string) (models.User, error) {
 	us.NameUser = userName.String
 	us.SurnameUser = userSurname.String
 
-	fmt.Println("The user has been updated succesfully!")
+	fmt.Println("The user has been updated successfully!")
 	return us, nil
 }
 
+// SelectAllUsers retrieves all users from the database.
 func SelectAllUsers() (models.UserDetails, error) {
 	fmt.Println("Select All Users function is starting...")
 
 	var usersDetails models.UserDetails
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return usersDetails, err
@@ -83,6 +93,7 @@ func SelectAllUsers() (models.UserDetails, error) {
 
 	defer Database.Close()
 
+	// Query to select all users
 	query := "SELECT * FROM Usuarios"
 	result, err := Database.Query(query)
 	if err != nil {
@@ -91,6 +102,7 @@ func SelectAllUsers() (models.UserDetails, error) {
 
 	defer result.Close()
 
+	// Scan each result into the usersDetails struct
 	for result.Next() {
 		var user models.User
 		var userName sql.NullString
@@ -111,15 +123,17 @@ func SelectAllUsers() (models.UserDetails, error) {
 		usersDetails.TotalUsers = append(usersDetails.TotalUsers, user)
 	}
 
-	fmt.Println("The users has been selected succesfully!")
+	fmt.Println("The users have been selected successfully!")
 	return usersDetails, nil
 }
 
+// SelectMyUser retrieves a single user based on its UUID.
 func SelectMyUser(idUser string) (models.User, error) {
 	fmt.Println("Select a User function is starting...")
 
 	var user models.User
 
+	// Connect to the database
 	err := DatabaseConnect()
 	if err != nil {
 		return user, err
@@ -127,6 +141,7 @@ func SelectMyUser(idUser string) (models.User, error) {
 
 	defer Database.Close()
 
+	// Query to select a user by its UUID
 	query := "SELECT * FROM Usuarios WHERE UUID_usuario = ?"
 	result, err := Database.Query(query, idUser)
 	if err != nil {
@@ -136,6 +151,7 @@ func SelectMyUser(idUser string) (models.User, error) {
 
 	defer result.Close()
 
+	// Scan the result into the user struct
 	result.Next()
 
 	var userName sql.NullString
@@ -148,6 +164,6 @@ func SelectMyUser(idUser string) (models.User, error) {
 	user.NameUser = userName.String
 	user.SurnameUser = userSurname.String
 
-	fmt.Println("The user has been selected succesfully!")
+	fmt.Println("The user has been selected successfully!")
 	return user, nil
 }
